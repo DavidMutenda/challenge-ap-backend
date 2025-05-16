@@ -1,5 +1,11 @@
 import json
 import psycopg2
+import pandas as pd
+
+# Step 1: Load CSV with pandas
+csv_file_path = 'mock_student_data.csv'
+df = pd.read_csv(csv_file_path)
+
 
 # PostgreSQL connection details
 conn = psycopg2.connect(
@@ -28,34 +34,17 @@ CREATE TABLE IF NOT EXISTS students (
 """)
 
 
-import json
-import csv
+# Step 4: Insert data using `execute_values` for performance
+from psycopg2.extras import execute_values
 
-# Load JSON data
-with open('mock_student_data.json', 'r') as json_file:
-    data = json.load(json_file)
+# Convert DataFrame to list of tuples
+data_tuples = list(df.itertuples(index=False, name=None))
 
-# Open CSV file for writing
-with open('data.csv', 'w', newline='') as csv_file:
-    # Get keys from the first dictionary for header
-    fieldnames = data[0].keys()
-    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+# Build insert query
+columns = ','.join(df.columns)
+insert_query = f"INSERT INTO students ({columns}) VALUES %s"
 
-    writer.writeheader()
-    writer.writerows(data)
-
-
-
-
-
-# Load and insert JSON data
-with open('mock_student_data.json') as f:
-    data = json.load(f)
-    for entry in data:
-        cur.execute("""
-        INSERT INTO Students (id, first_name, last_name,email,gender,student_id,study_programme, secondary_school,registration_date,academic_year) VALUES (%s, %s, %s,%s,%s,%s,%s,%s,%s,%s,)
-        ON CONFLICT (id) DO NOTHING
-        """, (entry['id'], entry['first_name'], entry['last_name'], entry['email'], entry['gender'], entry['student_id'], entry['study_programme'], entry['secondary_school'], entry['registration_date'], entry['academic_year']))
+execute_values(cur, insert_query, data_tuples)
 
 # Commit and close
 conn.commit()
