@@ -45,7 +45,7 @@ columns = ','.join(df.columns)
 insert_query = f"INSERT INTO students ({columns}) VALUES %s"
 
 execute_values(cur, insert_query, data_tuples)
-
+dsf
 # Commit and close
 conn.commit()
 cur.close()
